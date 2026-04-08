@@ -1,6 +1,6 @@
-name: capstone_template
+name: university_workshop
 
-profile: capstone_template
+profile: university_workshop
 
 seed-paths: ["seeds"]
 model-paths: ["models"]
@@ -11,9 +11,9 @@ clean-targets:
 
 seeds:
   # Builds seeds into '<your_dataset_name>_raw'
-  capstone_template:
+  university_workshop:
     +dataset: raw
 
 models:
-  capstone_template:
+  university_workshop:
     +static_analysis: strict
