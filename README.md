@@ -18,6 +18,8 @@ By the end of the workshop, you should have:
 - Git installed and a GitHub account
 - A working BigQuery connection configured in `profiles.yml`
 
+If needed, detailed setup instructions can be found [here](https://docs.google.com/document/d/1_9MhrFGBjv0MShmynGwTzi2aHLPFDkD7ZTcCxj-iyag/edit?usp=sharing)
+
 ---
 
 ## Quickstart
