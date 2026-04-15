@@ -54,17 +54,44 @@ Run: `dbt seed`
 
 ---
 
-## Project structure (starter scope)
+## Project structure
 You have:
 - `seeds/`  
   Curated CSVs that dbt loads into your warehouse (commonly into a `raw` schema or dataset).
 
 You do **not** have staging or marts models in this repo. You will create the staging layer in the guided portion of the workshop and the marts layer based on the question(s) you have chosen to answer.
 
-Recommended build-out:
-- `models/staging/` for staging models that clean and standardize the seeded raw tables.
-- `models/intermediate/` for reshaping, reusable transformations, and business logic
-- `models/marts/` for business-facing `dim_*` and `fct_*` models used to answer analytics questions
+### Recommended build-out
+
+#### Staging (`models/staging/`)
+
+Create `stg_*` models that:
+
+- rename fields consistently (`customer` → `customer_id`, `type` → `product_type`, etc.)
+- cast types (BigQuery: `CAST(...)` / `SAFE_CAST(...)`)
+- standardize timestamps/dates
+
+Example BigQuery casts:
+
+```
+SAFE_CAST(price AS NUMERIC) AS price,
+TIMESTAMP(ordered_at) AS ordered_at
+```
+
+#### Intermediate (`models/intermediate/`)
+
+Reusable joins / business logic:
+
+- `int_sales_enriched`: items + orders + products + stores (+ supplies)
+- `int_customer_orders`: customer order history + sequencing
+- `int_item_finance`: item-level revenue/cost/margin fields
+
+#### Marts (`models/marts/`)
+
+Final models that answer your question(s):
+
+- `dim_*` for entities (customer, product, store, date)
+- `fct_*` for measurable events (order, sale line, daily rollups)
 
 ---
 
@@ -86,17 +113,6 @@ dbt ls
 
 ---
 
-## Workshop requirements checklist (use this to self-review)
-- [ ] Defined primary + supporting analytics questions
-- [ ] Built at least one `dim_*` and/or `fct_*` model
-- [ ] Added schema tests for keys (unique, not_null)
-- [ ] Added at least one “business logic” test (accepted values, or custom test)
-- [ ] Added descriptions to key models and columns
-- [ ] Ran `dbt build` successfully with a clean output
-- [ ] README (or a file elsewhere in the repo) includes: At least one insight stated and supported by data evidence (numbers, comparison, trend, segment, etc.) and at least one realistic next step that follows from the insight(s)
-
----
-
 ## Suggested workflow (ADLC)
 1. **Plan**
    - Write questions, entities, grain, and expected outputs
@@ -115,6 +131,93 @@ dbt ls
    - Add any additional useful descriptions and documentation to the project, models, and columns.
 8. **Analyze**
    - Query your marts (or build an output artifact) and write 1–2 insights plus next steps
+
+---
+
+## Suggested analytics questions (if you're struggling to create your own)
+
+Pick **1 primary question** and **2–4 supporting questions**. Then build:
+
+- `models/staging/` → clean + standardize seeded raw tables
+- `models/intermediate/` → reusable joins + business logic (`int_*`)
+- `models/marts/` → business-facing outputs (`dim_*`, `fct_*`) that answer the question(s)
+
+**Seeded raw tables:**
+
+- `raw_customers(id, name)`
+- `raw_orders(id, customer, ordered_at, store_id, subtotal, tax_paid, order_total)`
+- `raw_items(id, order_id, sku)`
+- `raw_products(sku, name, type, price, description)`
+- `raw_stores(id, name, opened_at, tax_rate)`
+- `raw_supplies(id, name, cost, perishable, sku)`
+
+### Join map
+
+- `raw_orders.customer` → `raw_customers.id`
+- `raw_orders.store_id` → `raw_stores.id`
+- `raw_items.order_id` → `raw_orders.id`
+- `raw_items.sku` → `raw_products.sku`
+- `raw_supplies.sku` → `raw_products.sku` (and to `raw_items.sku`)
+
+## Option A: Profitability — Which products and stores are most profitable?
+
+**Primary question:** Which products (and stores) drive the most profit?
+
+**Supporting questions:**
+
+- Which **product types** have the highest **gross margin** and **margin %**?
+- Which **stores** drive the most **profit** vs the most **revenue** (not always the same)?
+- How much profit comes from **perishable** vs **non-perishable** products?
+
+**Suggested marts:**
+
+- `dim_product` (SKU-level attributes, including cost/perishable)
+- `dim_store`
+- `fct_sales_line` (one row per sold item) **or** `fct_product_profit_daily` (aggregated)
+
+**Implementation hint:** `raw_items` is line-level but doesn’t include quantity. A simple, consistent approach is to treat **each row in `raw_items` as 1 unit sold** and use `raw_products.price` as revenue per unit and `raw_supplies.cost` as cost per unit.
+
+## Option B: Product performance — What are customers buying, and how does mix vary by store over time?
+
+**Primary question:** What products sell best, and how does the product mix differ by store and over time?
+
+**Supporting questions:**
+
+- What are the **top SKUs** and **top product types** by **units sold** and **revenue**?
+- Do stores have distinct “bestsellers” (store-specific product mix)?
+- How does product mix change over time (`ordered_at`)?
+
+**Suggested marts:**
+
+- `dim_product`, `dim_store` (and optionally `dim_date`)
+- `fct_product_sales_daily` (grain: `order_date + sku (+ store_id)`)
+
+## Option C: Customers — Who are repeat customers and what do they buy?
+
+**Primary question:** Who are our repeat customers, and what patterns predict repeat purchasing?
+
+**Supporting questions:**
+
+- What % of customers are **one-time vs repeat** purchasers?
+- What is **time-to-second-order** for repeat customers?
+- Do repeat customers prefer certain **product types** (and do they have higher order totals)?
+
+**Suggested marts:**
+
+- `dim_customer`
+- `fct_orders` (order grain, enriched with customer + store)
+- `dim_customer_summary` (customer grain: order_count, repeat_flag, days_to_second_order, total_spend)
+
+---
+
+## Workshop requirements checklist (use this to self-review)
+- [ ] Defined primary + supporting analytics questions
+- [ ] Built at least one `dim_*` and/or `fct_*` model
+- [ ] Added schema tests for keys (unique, not_null)
+- [ ] Added at least one “business logic” test (accepted values, or custom test)
+- [ ] Added descriptions to key models and columns
+- [ ] Ran `dbt build` successfully with a clean output
+- [ ] README (or a file elsewhere in the repo) includes: At least one insight stated and supported by data evidence (numbers, comparison, trend, segment, etc.) and at least one realistic next step that follows from the insight(s)
 
 ---
 
