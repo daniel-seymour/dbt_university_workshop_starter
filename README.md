@@ -1,3 +1,16 @@
+My notes:
+1. Transfer raw_* tables into consistent stg_* tables
+2. 1 row in = 1 row out.- no joins or aggregations
+3. rename columns with snake_case
+4. cast types explicitly
+4. create good expectations: add primary key uniqueness where applicable; not_null on required columns
+5. target = where you are writing to
+6. running dbt seed results in materialising tables
+7. sql table uses cte expression to 'import'
+8. jinja is a templating language which use {{ xyz }}
+9. you can compile the code so you can see how the macro substitutes in the code
+
+
 # University Workshop Starter
 This repository is a **starting point** for an end-to-end analytics engineering project in dbt as experienced in a dbt Labs University Workshop. This repo uses the legendary [Jaffle Shop](https://github.com/dbt-labs/jaffle-shop) project for its curated sample data, but with a much smaller scope: **only seeds** are included so you can get started easily. Your job in the workshop will be to design and build your own staging layer (guided) and then the intermediate and mart layer (independently) to ultimately answer specified analytics/business question(s).
 
@@ -56,7 +69,7 @@ Run: `dbt seed`
 
 ## Project structure
 You have:
-- `seeds/`  
+- `seeds/`
   Curated CSVs that dbt loads into your warehouse (commonly into a `raw` schema or dataset).
 
 You do **not** have staging or marts models in this repo. You will create the staging layer in the guided portion of the workshop and the marts layer based on the question(s) you have chosen to answer.
